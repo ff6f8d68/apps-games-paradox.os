@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment System</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    /* Basic styling for the form */
+    #payment-form {
+      width: 300px;
+      margin: 50px auto;
+    }
+    #payment-form input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    #payment-form button {
+      width: 100%;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <form id="payment-form">
+    <input type="number" id="amount" placeholder="Amount in cents" required>
+    <button type="submit">Pay</button>
+  </form>
+
+  <script>
+    const stripe = Stripe('your-stripe-publishable-key');
+
+    document.getElementById('payment-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = document.getElementById('amount').value;
+
+      const response = await fetch('http://localhost:3000/create-payment-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount })
+      });
+
+      const { clientSecret } = await response.json();
+
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: {
+            // Assume card information is being entered here
+            number: '4242424242424242',
+            exp_month: 12,
+            exp_year: 2023,
+            cvc: '123'
+          }
+        }
+      });
+
+      if (result.error) {
+        // Show error to your customer
+        console.log(result.error.message);
+      } else {
+        // The payment has been processed!
+        if (result.paymentIntent.status === 'succeeded') {
+          console.log('Payment succeeded!');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
